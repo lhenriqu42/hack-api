@@ -18,10 +18,16 @@ public class Simulacao extends PanacheEntityBase {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_SIMULACAO")
-    public Long id;
+    public long id;
 
     @Column(name = "CO_PRODUTO", nullable = false)
     public Integer codigoProduto;
+
+    @Column(name = "NO_PRODUTO", nullable = false, length = 200)
+    public String nomeProduto;
+
+    @Column(name = "PC_TAXA_JUROS", nullable = false, precision = 10, scale = 9)
+    public BigDecimal taxaJuros;
 
     @Column(name = "VALOR_DESEJADO", nullable = false, precision = 18, scale = 2)
     public BigDecimal valorDesejado;

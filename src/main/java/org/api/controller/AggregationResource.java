@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.api.model.Simulacao;
-import org.api.repository.SimulacaoRepository;
+import org.api.repository.postgres.SimulacaoRepository;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;

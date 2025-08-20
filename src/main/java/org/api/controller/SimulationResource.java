@@ -8,7 +8,7 @@ import java.util.Map;
 import org.api.dto.SimulationRequest;
 import org.api.dto.SimulationResponse;
 import org.api.model.Simulacao;
-import org.api.repository.SimulacaoRepository;
+import org.api.repository.postgres.SimulacaoRepository;
 import org.api.service.SimulacaoService;
 
 import jakarta.inject.Inject;

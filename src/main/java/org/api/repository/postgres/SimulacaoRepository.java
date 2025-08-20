@@ -1,4 +1,4 @@
-package org.api.repository;
+package org.api.repository.postgres;
 
 import org.api.model.Simulacao;
 

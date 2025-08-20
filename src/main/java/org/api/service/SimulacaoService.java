@@ -6,16 +6,15 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.api.dto.ParcelaDTO;
 import org.api.dto.ResultadoDTO;
 import org.api.dto.SimulationRequest;
 import org.api.dto.SimulationResponse;
 import org.api.model.Produto;
-import org.api.model.Simulacao;
-import org.api.repository.ProdutoRepository;
-import org.api.repository.SimulacaoRepository;
+import org.api.repository.sqlserver.ProdutoRepository;
+import org.api.service.RedisQueueService.QueueStruct;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -24,37 +23,15 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class SimulacaoService {
 
+    private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
+
     @Inject
     ProdutoRepository produtoRepository;
 
     @Inject
-    SimulacaoRepository simulacaoRepository;
-
-    @Inject
-    RedisService ds;
+    RedisQueueService redisQueueService;
 
     private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
-
-    public List<Produto> listarProdutosCached() {
-        // Try Redis first
-        String cached = ds.get("produtos");
-        if (cached != null) {
-            // naive cache: ids separados por vírgula não é suficiente para objetos; manter simples: não usar cache se não existir serializer
-            // Em produção: use Redis JSON/codec. Aqui, retornamos do DB direto.
-        }
-        List<Produto> list = produtoRepository.listAll();
-        // skip set to Redis for simplicity in skeleton
-        return list;
-    }
-
-    private Optional<Produto> escolherProduto(BigDecimal valor, int prazo) {
-        for (Produto p : listarProdutosCached()) {
-            boolean prazoOk = (prazo >= p.minimoMeses) && (p.maximoMeses == null || prazo <= p.maximoMeses);
-            boolean valorOk = (valor.compareTo(p.valorMinimo) >= 0) && (p.valorMaximo == null || valor.compareTo(p.valorMaximo) <= 0);
-            if (prazoOk && valorOk) return Optional.of(p);
-        }
-        return Optional.empty();
-    }
 
     private List<ParcelaDTO> calcularSAC(BigDecimal principal, BigDecimal taxaMensal, int meses) {
         List<ParcelaDTO> parcelas = new ArrayList<>();
@@ -90,39 +67,50 @@ public class SimulacaoService {
 
     @Transactional
     public SimulationResponse simular(SimulationRequest req) {
-        var produtoOpt = escolherProduto(req.valorDesejado(), req.prazo());
-        if (produtoOpt.isEmpty()) {
+        List<Produto> produtos = produtoRepository.filterProducts(req.valorDesejado(), req.prazo());
+        if (produtos.isEmpty()) {
             throw new IllegalArgumentException("Nenhum produto compatível com valor/prazo informados.");
         }
-        var produto = produtoOpt.get();
-        BigDecimal taxa = produto.taxaJurosMensal;
+        Produto p = produtos.getFirst();
+
+        BigDecimal taxa = p.taxaJurosMensal;
         List<ParcelaDTO> sac = calcularSAC(req.valorDesejado(), taxa, req.prazo());
         List<ParcelaDTO> price = calcularPRICE(req.valorDesejado(), taxa, req.prazo());
         List<ResultadoDTO> resultados = List.of(new ResultadoDTO("SAC", sac), new ResultadoDTO("PRICE", price));
 
+        // VERIFICAR A VARACIDADE -------------------------------------------
         BigDecimal total = resultados.stream()
                 .flatMap(r -> r.parcelas().stream())
                 .map(ParcelaDTO::valorPrestacao)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
                 .setScale(2, RoundingMode.HALF_UP);
+        // ---------------------------------------------
 
-        Simulacao s = new Simulacao();
-        s.codigoProduto = produto.codigo;
-        s.valorDesejado = req.valorDesejado();
-        s.prazo = req.prazo();
-        s.dataReferencia = LocalDate.now();
-        s.valorTotalParcelas = total;
-        simulacaoRepository.persist(s);
+        // Gerar um ID único do tipo Long
+        long simulacaoId = ID_GENERATOR.getAndIncrement();
 
-        // Enviar para EventHub (placeholder no esqueleto)
-        // EventHubProducer.send(simulationJson)
+        // BACKGROUND PROCCESSING REDIS QUEUE
+        // store in DB(nao decidido qual)
+        // content:
+        QueueStruct data = new QueueStruct(
+                simulacaoId,
+                p.codigo,
+                p.nome,
+                p.taxaJurosMensal,
+                req.valorDesejado(),
+                req.prazo(),
+                LocalDate.now(),
+                total);
 
-        return new SimulationResponse(
-                s.id,
-                produto.codigo,
-                produto.nome,
-                taxa,
-                resultados
-        );
+        redisQueueService.enqueue(data);
+
+        // event in eventhub(SimulationResponse)
+        SimulationResponse response = new SimulationResponse(
+                simulacaoId,
+                p.codigo,
+                p.nome,
+                p.taxaJurosMensal,
+                resultados);
+        return response;
     }
 }
