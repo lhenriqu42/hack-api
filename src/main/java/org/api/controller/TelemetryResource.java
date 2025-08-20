@@ -1,8 +1,12 @@
 package org.api.controller;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
+import org.api.performance.MetricsCalculator.MetricsSnapshot;
+import org.api.performance.MetricsManager;
+
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -12,21 +16,16 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class TelemetryResource {
 
+    private record ResponseTelemetry(
+            LocalDate dataReferencia,
+            List<MetricsSnapshot> listaEndpoints) {
+    }
+
+    @Inject
+    private MetricsManager metricsManager;
+
     @GET
-    public Map<String, Object> telemetria() {
-        // Esqueleto simples; em produção usar Micrometer/Prometheus
-        return Map.of(
-                "dataReferencia", java.time.LocalDate.now().toString(),
-                "listaEndpoints", List.of(
-                        Map.of(
-							"nomeApi", "Simulacao",
-							"qtdRequisicoes", 0,
-							"tempoMedio", 0,
-							"tempoMinimo", 0,
-							"tempoMaximo", 0,
-							"percentualSucesso", 1.0
-                        )
-                )
-        );
+    public ResponseTelemetry telemetria() {
+        return new ResponseTelemetry(LocalDate.now(), metricsManager.getAllMetricsSnapshots());
     }
 }
