@@ -6,8 +6,6 @@ import java.time.LocalDate;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
@@ -16,9 +14,8 @@ import jakarta.persistence.Table;
 public class Simulacao extends PanacheEntityBase {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID_SIMULACAO")
-    public long id;
+    @Column(name = "ID_SIMULACAO", nullable = false, unique = true)
+    public Long id;
 
     @Column(name = "CO_PRODUTO", nullable = false)
     public Integer codigoProduto;

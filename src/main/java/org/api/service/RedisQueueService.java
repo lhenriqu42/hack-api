@@ -1,6 +1,7 @@
 package org.api.service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 
 import io.quarkus.redis.datasource.RedisDataSource;
@@ -44,16 +45,22 @@ public class RedisQueueService {
     }
 
     /**
+     * Remove e retorna o primeiro item da fila (FIFO).
+     * Se a fila estiver vazia, aguarda até que um item esteja disponível ou até que
+     * o tempo limite seja atingido.
+     */
+    public QueueStruct dequeue(Duration timeout) {
+        var item = commands.blpop(timeout, QUEUE_NAME);
+        if (item == null) {
+            return null; // timeout atingido, fila vazia
+        }
+        return item.value();
+    }
+
+    /**
      * Verifica o tamanho atual da fila.
      */
     public long size() {
         return commands.llen(QUEUE_NAME);
-    }
-
-    /**
-     * Retorna o próximo item da fila sem removê-lo.
-     */
-    public QueueStruct peek() {
-        return commands.lindex(QUEUE_NAME, 0);
     }
 }

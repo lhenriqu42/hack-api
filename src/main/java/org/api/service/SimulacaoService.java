@@ -90,8 +90,6 @@ public class SimulacaoService {
         long simulacaoId = ID_GENERATOR.getAndIncrement();
 
         // BACKGROUND PROCCESSING REDIS QUEUE
-        // store in DB(nao decidido qual)
-        // content:
         QueueStruct data = new QueueStruct(
                 simulacaoId,
                 p.codigo,
@@ -101,10 +99,8 @@ public class SimulacaoService {
                 req.prazo(),
                 LocalDate.now(),
                 total);
-
         redisQueueService.enqueue(data);
 
-        // event in eventhub(SimulationResponse)
         SimulationResponse response = new SimulationResponse(
                 simulacaoId,
                 p.codigo,
