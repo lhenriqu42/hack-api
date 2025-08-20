@@ -1,0 +1,41 @@
+services:
+  redis:
+    image: redis:7.0
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+    restart: always
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      SA_PASSWORD: "SenhaForte123!@"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    networks:
+      - backend
+    volumes:
+      - ./src/main/resources/products.sql:/docker-entrypoint-initdb.d/products.sql
+      - sqlserver_data:/var/opt/mssql
+    restart: always
+
+  sqlserver-init:
+    image: mcr.microsoft.com/mssql-tools
+    depends_on:
+      - sqlserver
+    entrypoint: /bin/bash -c "sleep 20 && /opt/mssql-tools/bin/sqlcmd -S sqlserver -U sa -P 'SenhaForte123!@' -d master -i /docker-entrypoint-initdb.d/products.sql"
+    volumes:
+      - ./src/main/resources/products.sql:/docker-entrypoint-initdb.d/products.sql
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  sqlserver_data:

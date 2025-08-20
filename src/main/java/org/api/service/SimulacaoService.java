@@ -1,21 +1,25 @@
 package org.api.service;
 
-import org.api.dto.*;
-import org.api.model.Produto;
-import org.api.model.Simulacao;
-import org.api.repository.ProdutoRepository;
-import org.api.repository.SimulacaoRepository;
-import io.vertx.mutiny.redis.client.Redis;
-import io.vertx.mutiny.redis.client.Response;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.api.dto.ParcelaDTO;
+import org.api.dto.ResultadoDTO;
+import org.api.dto.SimulationRequest;
+import org.api.dto.SimulationResponse;
+import org.api.model.Produto;
+import org.api.model.Simulacao;
+import org.api.repository.ProdutoRepository;
+import org.api.repository.SimulacaoRepository;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class SimulacaoService {
@@ -27,13 +31,13 @@ public class SimulacaoService {
     SimulacaoRepository simulacaoRepository;
 
     @Inject
-    Redis redis;
+    RedisService ds;
 
     private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
 
     public List<Produto> listarProdutosCached() {
         // Try Redis first
-        Response cached = redis.get("produtos").await().indefinitely();
+        String cached = ds.get("produtos");
         if (cached != null) {
             // naive cache: ids separados por vírgula não é suficiente para objetos; manter simples: não usar cache se não existir serializer
             // Em produção: use Redis JSON/codec. Aqui, retornamos do DB direto.

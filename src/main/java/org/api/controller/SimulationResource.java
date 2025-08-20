@@ -12,6 +12,7 @@ import org.api.repository.SimulacaoRepository;
 import org.api.service.SimulacaoService;
 
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -34,7 +35,7 @@ public class SimulationResource {
 	SimulacaoRepository simulacaoRepository;
 
 	@POST
-	public Response simular(SimulationRequest req) {
+	public Response simular(@Valid SimulationRequest req) {
 		Instant start = Instant.now();
 		try {
 			SimulationResponse res = service.simular(req);
