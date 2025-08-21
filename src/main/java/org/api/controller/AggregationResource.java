@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import org.api.database.postgres.model.Simulacao;
 import org.api.database.postgres.repository.SimulacaoRepository;
+import org.api.performance.anottations.TrackMetrics;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -32,7 +33,7 @@ public class AggregationResource {
 			BigDecimal valorTotalCredito) {
 	}
 
-	private record ResponseDia(
+	public record ResponseDia(
 			LocalDate dataReferencia,
 			List<SimuProduct> simulacoes) {
 	}
@@ -44,7 +45,7 @@ public class AggregationResource {
 			BigDecimal valorTotalParcelas) {
 	}
 
-	private record ResponseAll(
+	public record ResponseAll(
 			Integer pagina,
 			Long qtdRegistros,
 			Integer qtdRegistrosPagina,
@@ -57,11 +58,13 @@ public class AggregationResource {
 	SimulacaoRepository repo;
 
 	@GET
+	@TrackMetrics
 	public ResponseDia porProdutoDia(@QueryParam("dia") String diaReq) {
+
 		LocalDate dia = (diaReq == null || diaReq.isBlank()) ? LocalDate.now() : LocalDate.parse(diaReq);
 		List<Simulacao> sims = repo.find("dataReferencia", dia).list();
 		Map<Integer, List<Simulacao>> porProduto = sims.stream().collect(Collectors.groupingBy(s -> s.codigoProduto));
-		
+
 		List<SimuProduct> simulacoes = new ArrayList<>();
 		for (var entry : porProduto.entrySet()) {
 			Integer codigoProduto = entry.getKey();
@@ -94,9 +97,12 @@ public class AggregationResource {
 
 	@GET()
 	@Path("/all")
+	@TrackMetrics
+
 	public ResponseAll getAll(
 			@QueryParam("pagina") Integer pagina,
 			@QueryParam("qtdRegistrosPagina") Integer qtdRegistrosPagina) {
+
 		if (pagina == null || pagina < 1) {
 			pagina = 1;
 		}

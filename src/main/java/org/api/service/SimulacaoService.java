@@ -66,25 +66,22 @@ public class SimulacaoService {
 	}
 
 	@Transactional
-	public SimulationResponse simular(SimulationRequest req) {
-		List<Produto> produtos = produtoRepository.filterProducts(req.valorDesejado(), req.prazo());
-		if (produtos.isEmpty()) {
-			throw new IllegalArgumentException("Nenhum produto compatível com valor/prazo informados.");
-		}
-		Produto p = produtos.getFirst();
+	public SimulationResponse simular(Produto produto, BigDecimal valorDesejado, int prazo) {
 
-		BigDecimal taxa = p.taxaJurosMensal;
-		List<ParcelaDTO> sac = calcularSAC(req.valorDesejado(), taxa, req.prazo());
-		List<ParcelaDTO> price = calcularPRICE(req.valorDesejado(), taxa, req.prazo());
+		BigDecimal taxa = produto.taxaJurosMensal;
+		List<ParcelaDTO> sac = calcularSAC(valorDesejado, taxa, prazo);
+		List<ParcelaDTO> price = calcularPRICE(valorDesejado, taxa, prazo);
 		List<ResultadoDTO> resultados = List.of(new ResultadoDTO("SAC", sac), new ResultadoDTO("PRICE", price));
 
-		// VERIFICAR A VARACIDADE -------------------------------------------
-		BigDecimal total = resultados.stream()
-				.flatMap(r -> r.parcelas().stream())
+		BigDecimal totalSac = sac.stream()
 				.map(ParcelaDTO::valorPrestacao)
 				.reduce(BigDecimal.ZERO, BigDecimal::add)
 				.setScale(2, RoundingMode.HALF_UP);
-		// ---------------------------------------------
+		BigDecimal totalPrice = price.stream()
+				.map(ParcelaDTO::valorPrestacao)
+				.reduce(BigDecimal.ZERO, BigDecimal::add)
+				.setScale(2, RoundingMode.HALF_UP);
+		BigDecimal total = totalSac.add(totalPrice).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
 
 		// Gerar um ID único do tipo Long
 		long simulacaoId = ID_GENERATOR.getAndIncrement();
@@ -92,21 +89,29 @@ public class SimulacaoService {
 		// BACKGROUND PROCCESSING REDIS QUEUE
 		QueueStruct data = new QueueStruct(
 				simulacaoId,
-				p.codigo,
-				p.nome,
-				p.taxaJurosMensal,
-				req.valorDesejado(),
-				req.prazo(),
+				produto.codigo,
+				produto.nome,
+				produto.taxaJurosMensal,
+				valorDesejado,
+				prazo,
 				LocalDate.now(),
 				total);
 		redisQueueService.enqueue(data);
 
 		SimulationResponse response = new SimulationResponse(
 				simulacaoId,
-				p.codigo,
-				p.nome,
-				p.taxaJurosMensal,
+				produto.codigo,
+				produto.nome,
+				produto.taxaJurosMensal,
 				resultados);
 		return response;
+	}
+
+	public Produto getProduto(SimulationRequest req) {
+		List<Produto> produtos = produtoRepository.filterProducts(req.valorDesejado(), req.prazo());
+		if (produtos.isEmpty()) {
+			return null;
+		}
+		return produtos.getFirst();
 	}
 }

@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.api.performance.MetricsCalculator.MetricsSnapshot;
 import org.api.performance.MetricsManager;
+import org.api.performance.anottations.TrackMetrics;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -14,9 +15,10 @@ import jakarta.ws.rs.core.MediaType;
 
 @Path("/telemetria")
 @Produces(MediaType.APPLICATION_JSON)
+@TrackMetrics
 public class TelemetryResource {
 
-    private record ResponseTelemetry(
+    public record ResponseTelemetry(
             LocalDate dataReferencia,
             List<MetricsSnapshot> listaEndpoints) {
     }

@@ -12,8 +12,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 public class ProdutoRepository implements PanacheRepository<Produto> {
 
 	public List<Produto> filterProducts(BigDecimal valor, int prazo) {
+		// Use entity property names (not DB column names) in JPQL/HQL so Hibernate can resolve paths
 		return list(
-				"VR_MINIMO <= ?1 and (VR_MAXIMO is null or VR_MAXIMO >= ?1) and NU_MINIMO_MESES <= ?2 and (NU_MAXIMO_MESES is null or NU_MAXIMO_MESES >= ?2)",
+				"valorMinimo <= ?1 and (valorMaximo is null or valorMaximo >= ?1) and minimoMeses <= ?2 and (maximoMeses is null or maximoMeses >= ?2)",
 				valor, prazo);
 	}
 }
