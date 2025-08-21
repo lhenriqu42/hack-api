@@ -32,7 +32,7 @@ public class SimulationResource {
 		try {
 			Produto produto = service.getProduto(req);
 			if (produto == null) {
-				throw new IllegalArgumentException("Infelizmente não temos nenhum produto que atenda a sua solicitação atualmente 😓");
+				throw new IllegalArgumentException("Infelizmente não temos nenhum produto que atenda a sua solicitação no momento 😓");
 			}
 
 			SimulationResponse res = service.simular(produto, req.valorDesejado(), req.prazo());

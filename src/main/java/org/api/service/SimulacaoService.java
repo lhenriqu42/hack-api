@@ -29,6 +29,9 @@ public class SimulacaoService {
 	ProdutoRepository produtoRepository;
 
 	@Inject
+	CacheService cacheService;
+
+	@Inject
 	RedisQueueService redisQueueService;
 
 	private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
@@ -113,11 +116,21 @@ public class SimulacaoService {
 		return response;
 	}
 
+	private String generateCacheKey(SimulationRequest req) {
+		return String.format("valorDesejado:%s-prazo:%d", req.valorDesejado(), req.prazo());
+	}
+
 	public Produto getProduto(SimulationRequest req) {
+		String cacheKey = generateCacheKey(req);
+		var produtoCached = cacheService.get(cacheKey);
+		if (produtoCached.isPresent()) {
+			return (Produto) produtoCached.get();
+		}
 		List<Produto> produtos = produtoRepository.filterProducts(req.valorDesejado(), req.prazo());
 		if (produtos.isEmpty()) {
 			return null;
 		}
+		cacheService.put(cacheKey, produtos.getFirst());
 		return produtos.getFirst();
 	}
 }
