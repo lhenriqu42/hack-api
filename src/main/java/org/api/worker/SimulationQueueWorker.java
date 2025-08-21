@@ -10,9 +10,10 @@ import org.api.service.RedisQueueService;
 import org.api.service.RedisQueueService.QueueStruct;
 
 import io.quarkus.logging.Log;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
+import io.quarkus.runtime.ShutdownEvent;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
@@ -24,14 +25,10 @@ public class SimulationQueueWorker {
 	@Inject
 	RedisQueueService redisService;
 
-	// Se precisar persistir no banco, injete aqui seu repository/service (@Inject
-	// SimulacaoRepository repo)
-
 	private ExecutorService executor;
 	private final AtomicBoolean running = new AtomicBoolean(false);
 
-	@PostConstruct
-	void start() {
+	public void onStart(@Observes StartupEvent ev) {
 		int threads = 1; // manter 1 enquanto simples; aumentar depois se necessário
 		executor = Executors.newFixedThreadPool(threads);
 		running.set(true);
@@ -71,13 +68,12 @@ public class SimulationQueueWorker {
 		s.valorTotalParcelas = item.valorTotalParcelas();
 
 		s.persist();
-
+		
 		// send event in eventhub(SimulationResponse)
 
 	}
 
-	@PreDestroy
-	void stop() {
+	public void onStop(@Observes ShutdownEvent ev) {
 		running.set(false);
 		if (executor != null) {
 			executor.shutdownNow();

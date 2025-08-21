@@ -23,7 +23,7 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class SimulacaoService {
 
-	private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
+	private static final AtomicLong COUNTER = new AtomicLong(0);
 
 	@Inject
 	ProdutoRepository produtoRepository;
@@ -32,6 +32,12 @@ public class SimulacaoService {
 	RedisQueueService redisQueueService;
 
 	private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
+
+	private static long generateUniqueId() {
+		long timestamp = System.currentTimeMillis();
+		long counter = COUNTER.getAndUpdate(x -> (x + 1) % 1000);
+		return timestamp * 1000 + counter;
+	}
 
 	private List<ParcelaDTO> calcularSAC(BigDecimal principal, BigDecimal taxaMensal, int meses) {
 		List<ParcelaDTO> parcelas = new ArrayList<>();
@@ -84,7 +90,7 @@ public class SimulacaoService {
 		BigDecimal total = totalSac.add(totalPrice).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
 
 		// Gerar um ID único do tipo Long
-		long simulacaoId = ID_GENERATOR.getAndIncrement();
+		long simulacaoId = generateUniqueId();
 
 		// BACKGROUND PROCCESSING REDIS QUEUE
 		QueueStruct data = new QueueStruct(
