@@ -99,8 +99,9 @@ public class MetricsCalculator {
         if (min == Long.MAX_VALUE) min = 0L;
         if (max == Long.MIN_VALUE) max = 0L;
 
-        long media = soma / total;
-        double percentualSucesso = (sucesso * 100.0) / total;
+    long media = soma / total;
+    double percentualSucesso = (sucesso * 100.0) / total;
+    percentualSucesso = Math.round(percentualSucesso * 100.0) / 100.0;
 
         return new MetricsSnapshot(
                 nomeApi,

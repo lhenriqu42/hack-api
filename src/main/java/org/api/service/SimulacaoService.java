@@ -108,7 +108,7 @@ public class SimulacaoService {
 				simulacaoId,
 				produto.codigo,
 				produto.nome,
-				produto.taxaJurosMensal,
+				produto.taxaJurosMensal.stripTrailingZeros(),
 				resultados);
 		return response;
 	}

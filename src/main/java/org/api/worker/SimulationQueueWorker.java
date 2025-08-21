@@ -41,7 +41,7 @@ public class SimulationQueueWorker {
 			try {
 				QueueStruct item = redisService.dequeue(WAIT_TIMEOUT);
 				if (item == null) {
-					continue; // sem item, volta a esperar
+					continue;
 				}
 				long ini = System.nanoTime();
 				processItem(item);
@@ -50,7 +50,6 @@ public class SimulationQueueWorker {
 						(System.nanoTime() - ini) / 1_000_000);
 			} catch (Exception e) {
 				Log.error("Falha processando item da fila", e);
-				// simples: ignora e segue. (Melhoria futura: mandar para DLQ)
 			}
 		}
 	}

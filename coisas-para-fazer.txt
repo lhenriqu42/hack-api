@@ -1,21 +1,13 @@
 DOCUMENTAR AS QUERRYS POSSIVEIS NOS ENDPOINTS
-VALIDAR CORRETAMENTE AS QUERY PARAMETERS DAS REQ (string, int)
+ARQUITETURATI.CAIXA
 
 CRIAR O CONSUMO PARA(EVENTHUB)
-
-
-ALTERAR PACOTE PARA BR.GOV.CAIXA
-
 
 FAZER CACHE DOS PRODUTOS
 
 DOCUMENTAR TUDO E TODOS
 USAR TESTES UNITARIOS
 
-limitar percentualSucesso em 2 depois da virgula
-
-ARQUITETURATI.CAIXA
-
 CRIAR DOCKERFILE
 
-atualmente pegando a media e considerando como total
+re-estruturar todos os DTO (uns na pasta dto e outros direto no codigo)

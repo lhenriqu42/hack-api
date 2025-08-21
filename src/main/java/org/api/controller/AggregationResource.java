@@ -24,25 +24,19 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class AggregationResource {
 
-	private record SimuProduct(
-			Integer codigoProduto,
-			String descricaoProduto,
-			BigDecimal taxaMediaJuro,
-			BigDecimal valorMedioPrestacao,
-			BigDecimal valorTotalDesejado,
-			BigDecimal valorTotalCredito) {
-	}
+	private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
 
 	public record ResponseDia(
 			LocalDate dataReferencia,
 			List<SimuProduct> simulacoes) {
-	}
-
-	private record Registro(
-			Long idSimulacao,
-			BigDecimal valorDesejado,
-			Integer prazo,
-			BigDecimal valorTotalParcelas) {
+		public record SimuProduct(
+				Integer codigoProduto,
+				String descricaoProduto,
+				BigDecimal taxaMediaJuro,
+				BigDecimal valorMedioPrestacao,
+				BigDecimal valorTotalDesejado,
+				BigDecimal valorTotalCredito) {
+		}
 	}
 
 	public record ResponseAll(
@@ -50,9 +44,13 @@ public class AggregationResource {
 			Long qtdRegistros,
 			Integer qtdRegistrosPagina,
 			List<Registro> registros) {
+		public record Registro(
+				Long idSimulacao,
+				BigDecimal valorDesejado,
+				Integer prazo,
+				BigDecimal valorTotalParcelas) {
+		}
 	}
-
-	private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
 
 	@Inject
 	SimulacaoRepository repo;
@@ -65,7 +63,7 @@ public class AggregationResource {
 		List<Simulacao> sims = repo.find("dataReferencia", dia).list();
 		Map<Integer, List<Simulacao>> porProduto = sims.stream().collect(Collectors.groupingBy(s -> s.codigoProduto));
 
-		List<SimuProduct> simulacoes = new ArrayList<>();
+		List<ResponseDia.SimuProduct> simulacoes = new ArrayList<>();
 		for (var entry : porProduto.entrySet()) {
 			Integer codigoProduto = entry.getKey();
 			List<Simulacao> lista = entry.getValue();
@@ -84,7 +82,7 @@ public class AggregationResource {
 					.map(s -> s.valorTotalParcelas)
 					.reduce(BigDecimal.ZERO, BigDecimal::add);
 
-			simulacoes.add(new SimuProduct(
+			simulacoes.add(new ResponseDia.SimuProduct(
 					codigoProduto,
 					lista.get(0).nomeProduto,
 					taxaMediaJuro,
@@ -98,7 +96,6 @@ public class AggregationResource {
 	@GET()
 	@Path("/all")
 	@TrackMetrics
-
 	public ResponseAll getAll(
 			@QueryParam("pagina") Integer pagina,
 			@QueryParam("qtdRegistrosPagina") Integer qtdRegistrosPagina) {
@@ -111,8 +108,8 @@ public class AggregationResource {
 		}
 
 		List<Simulacao> simulacoes = repo.findAll().page(pagina - 1, qtdRegistrosPagina).list();
-		List<Registro> registros = simulacoes.stream()
-				.map(s -> new Registro(s.id, s.valorDesejado, s.prazo, s.valorTotalParcelas))
+		List<ResponseAll.Registro> registros = simulacoes.stream()
+				.map(s -> new ResponseAll.Registro(s.id, s.valorDesejado, s.prazo, s.valorTotalParcelas))
 				.collect(Collectors.toList());
 
 		return new ResponseAll(pagina, repo.count(), registros.size(), registros);
