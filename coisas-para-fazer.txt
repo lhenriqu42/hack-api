@@ -2,6 +2,7 @@ DOCUMENTAR AS QUERRYS POSSIVEIS NOS ENDPOINTS
 ARQUITETURATI.CAIXA
 
 CRIAR O CONSUMO PARA(EVENTHUB)
+	(caso erro no banco ou evento fazer x coisa em relacao a fila)
 
 FAZER CACHE DOS PRODUTOS
 
@@ -10,4 +11,4 @@ USAR TESTES UNITARIOS
 
 CRIAR DOCKERFILE
 
-re-estruturar todos os DTO (uns na pasta dto e outros direto no codigo)
+PREPARAR O AMBIENTE PARA ENVIAR (application.properties)(sqlserver)

@@ -6,6 +6,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.api.database.postgres.model.Simulacao;
+import org.api.event.EventHubProducer;
 import org.api.service.RedisQueueService;
 import org.api.service.RedisQueueService.QueueStruct;
 
@@ -24,6 +25,9 @@ public class SimulationQueueWorker {
 
 	@Inject
 	RedisQueueService redisService;
+
+	@Inject
+	EventHubProducer eventHubProducer;
 
 	private ExecutorService executor;
 	private final AtomicBoolean running = new AtomicBoolean(false);
@@ -44,7 +48,8 @@ public class SimulationQueueWorker {
 					continue;
 				}
 				long ini = System.nanoTime();
-				processItem(item);
+				insertInPostgres(item);
+				sendEvent(item);
 				Log.debugf("Item simulacaoId=%d processado em %d ms",
 						item.simulacaoId(),
 						(System.nanoTime() - ini) / 1_000_000);
@@ -55,21 +60,20 @@ public class SimulationQueueWorker {
 	}
 
 	@Transactional
-	void processItem(QueueStruct item) {
-		Simulacao s = new Simulacao();
-		s.id = item.simulacaoId();
-		s.codigoProduto = item.codigoProduto();
-		s.nomeProduto = item.nomeProduto();
-		s.taxaJuros = item.taxaJurosMensal();
-		s.valorDesejado = item.valorDesejado();
-		s.prazo = item.prazo();
-		s.dataReferencia = item.dataReferencia();
-		s.valorTotalParcelas = item.valorTotalParcelas();
+	void sendEvent(QueueStruct item) {
+		eventHubProducer.sendJson(item)
+				.whenComplete((res, ex) -> {
+					if (ex != null) {
+						Log.error("Falha ao enviar evento para EventHub", ex);
+					} else {
+						Log.infov("Evento enviado para EventHub: simulacaoId={0}", item.simulacaoId());
+					}
+				});
+	}
 
-		s.persist();
-		
-		// send event in eventhub(SimulationResponse)
-
+	@Transactional
+	void insertInPostgres(QueueStruct item) {
+		new Simulacao(item).persist();
 	}
 
 	public void onStop(@Observes ShutdownEvent ev) {
