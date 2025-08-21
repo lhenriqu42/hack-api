@@ -1,4 +1,4 @@
-package org.api.model;
+package org.api.database.postgres.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

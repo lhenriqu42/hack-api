@@ -1,6 +1,6 @@
-package org.api.repository.postgres;
+package org.api.database.postgres.repository;
 
-import org.api.model.Simulacao;
+import org.api.database.postgres.model.Simulacao;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;

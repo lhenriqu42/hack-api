@@ -1,4 +1,4 @@
-package org.api.model;
+package org.api.database.sqlserver.model;
 
 import java.math.BigDecimal;
 

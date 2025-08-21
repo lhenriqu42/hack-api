@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.api.model.Simulacao;
-import org.api.repository.postgres.SimulacaoRepository;
+import org.api.database.postgres.model.Simulacao;
+import org.api.database.postgres.repository.SimulacaoRepository;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
