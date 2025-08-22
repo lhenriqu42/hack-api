@@ -138,7 +138,7 @@ public class SimulacaoService {
 		// pegando a media por falta de esclarecimento
 		BigDecimal total = totalSac.add(totalPrice).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
 		CalcInfo calcInfo = new CalcInfo(sac, price, resultados, totalSac, totalPrice, total);
-		cacheService.put(cacheKey, calcInfo, 60 * 60); // cache por 1 hora
+		cacheService.put(cacheKey, calcInfo, 60 * 5); // cache por 5 minutos
 		return calcInfo;
 	}
 
