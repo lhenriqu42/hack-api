@@ -4,6 +4,8 @@ ARQUITETURATI.CAIXA
 incoerencia em total das parcelas
 incoerencia em telemetria
 
+adicionar um swagger
+
 DOCUMENTAR TUDO E TODOS
 README.MD
 USAR TESTES UNITARIOS
