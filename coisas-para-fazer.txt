@@ -1,19 +1,27 @@
 DOCUMENTAR AS QUERRYS POSSIVEIS NOS ENDPOINTS
 ARQUITETURATI.CAIXA
 
-incoerencia em total das parcelas
-incoerencia em telemetria
+incoerencia em total das parcelas (FAZER UM ENDPOINT Corrigido separado)
+incoerencia em telemetria (possibilitar filtrar por POST/GET atravez de query params)
 
-adicionar um swagger
+adicionar um swagger (pesquisar alternativas para quarkus)
 
 DOCUMENTAR TUDO E TODOS
 README.MD
 USAR TESTES UNITARIOS
 
-pensar em colocar vault 
+ESTRUTURAR O PROJETO POR MODULOS
+
+
+pensar em colocar vault
 PREPARAR O AMBIENTE PARA ENVIAR (application.properties)(sqlserver)
 
 tratar que os dados nao esta permanecendo nos bancos ao reiniciar os containers
 
+
+max.workers.process=${PROCESS_THREAD_POOL:15} -> fazer isso
+
+aumentar os workers usando esse como referencia: https://github.dev/Maxel-Uds/payment-router
+BOMBARDEAR A API DE REQUESTS
 
 CRIAR DOCKERFILE
