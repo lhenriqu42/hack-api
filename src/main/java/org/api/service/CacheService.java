@@ -23,7 +23,7 @@ public class CacheService {
     }
 
     // ConcurrentHashMap para ser thread-safe
-    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+    private final Map<String, CacheEntry> cacheMap = new ConcurrentHashMap<>();
 
 
     // Adiciona/atualiza um valor no cache com TTL padrão
@@ -34,17 +34,17 @@ public class CacheService {
     // Adiciona/atualiza um valor no cache com TTL customizável (ms)
     public void put(String key, Object value, long ttlMillis) {
         long expiresAt = System.currentTimeMillis() + TTL_MILLIS;
-        cache.put(key, new CacheEntry(value, expiresAt));
+        cacheMap.put(key, new CacheEntry(value, expiresAt));
     }
 
     // Recupera um valor do cache (retorna vazio se expirado)
     public Optional<Object> get(String key) {
-        CacheEntry entry = cache.get(key);
+        CacheEntry entry = cacheMap.get(key);
         if (entry == null) {
             return Optional.empty();
         }
         if (System.currentTimeMillis() >= entry.expiresAt) {
-            cache.remove(key);
+            cacheMap.remove(key);
             return Optional.empty();
         }
         return Optional.ofNullable(entry.value);
@@ -52,11 +52,11 @@ public class CacheService {
 
     // Remove um valor do cache
     public void remove(String key) {
-        cache.remove(key);
+        cacheMap.remove(key);
     }
 
     // Limpa todo o cache
     public void clear() {
-        cache.clear();
+        cacheMap.clear();
     }
 }
