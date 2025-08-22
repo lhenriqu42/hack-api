@@ -8,5 +8,7 @@ USAR TESTES UNITARIOS
 pensar em colocar vault 
 PREPARAR O AMBIENTE PARA ENVIAR (application.properties)(sqlserver)
 
+tratar que os dados nao esta permanecendo nos bancos ao reiniciar os containers
+
 
 CRIAR DOCKERFILE
