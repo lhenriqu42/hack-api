@@ -1,9 +1,8 @@
 package org.api.controller;
 
 import java.time.LocalDate;
-import java.util.List;
 
-import org.api.performance.MetricsCalculator.MetricsSnapshot;
+import org.api.dto.ResponseTelemetry;
 import org.api.performance.MetricsManager;
 import org.api.performance.anottations.TrackMetrics;
 
@@ -18,16 +17,11 @@ import jakarta.ws.rs.core.MediaType;
 @TrackMetrics
 public class TelemetryResource {
 
-    public record ResponseTelemetry(
-            LocalDate dataReferencia,
-            List<MetricsSnapshot> listaEndpoints) {
-    }
+	@Inject
+	private MetricsManager metricsManager;
 
-    @Inject
-    private MetricsManager metricsManager;
-
-    @GET
-    public ResponseTelemetry telemetria() {
-        return new ResponseTelemetry(LocalDate.now(), metricsManager.getAllMetricsSnapshots());
-    }
+	@GET
+	public ResponseTelemetry telemetria() {
+		return new ResponseTelemetry(LocalDate.now(), metricsManager.getAllMetricsSnapshots());
+	}
 }

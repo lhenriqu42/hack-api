@@ -5,34 +5,40 @@ package org.api.event;
 // com a connection-string via config e envie o JSON da simulação de forma assíncrona.
 import java.util.concurrent.CompletableFuture;
 
-import org.api.service.RedisQueueService.QueueStruct;
+import org.api.dto.QueueStruct;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import com.azure.messaging.eventhubs.EventData;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class EventHubProducer {
 
 	private static final Logger LOG = Logger.getLogger(EventHubProducer.class);
-
+	
 	@ConfigProperty(name = "eventhub.connection-string", defaultValue = "")
 	String connectionString;
+	
+	@Inject
+	ObjectMapper mapper;
 
 	private EventHubProducerClient client;
 
-    @PostConstruct
-    void init() {
-        LOG.info("Inicializando EventHubProducer...");
-        client = new EventHubClientBuilder()
-                .connectionString(connectionString)
-                .buildProducerClient();
-    }
+	@PostConstruct
+	void init() {
+		LOG.info("Inicializando EventHubProducer...");
+		client = new EventHubClientBuilder()
+				.connectionString(connectionString)
+				.buildProducerClient();
+	}
 
 	/**
 	 * Envia um payload JSON para o Event Hub.
@@ -45,15 +51,14 @@ public class EventHubProducer {
 			return CompletableFuture.failedFuture(new IllegalStateException("EventHubProducerClient não inicializado"));
 		}
 
-		String json = item.toJsonString();
-
 		try {
+			String json = mapper.writeValueAsString(item);
 			EventData ev = new EventData(json.getBytes());
 			ev.setContentType("application/json");
 			client.send(java.util.List.of(ev));
 			LOG.infov("Evento enviado para EventHub (tamanho={0})", json.length());
 			return CompletableFuture.completedFuture(null);
-		} catch (Exception ex) {
+		} catch (JsonProcessingException ex) {
 			LOG.error("Falha ao enviar evento para EventHub", ex);
 			return CompletableFuture.failedFuture(ex);
 		}

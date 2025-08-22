@@ -3,7 +3,7 @@ package org.api.database.postgres.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import org.api.service.RedisQueueService.QueueStruct;
+import org.api.dto.QueueStruct;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;

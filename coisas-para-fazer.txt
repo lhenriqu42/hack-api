@@ -5,7 +5,7 @@ DOCUMENTAR TUDO E TODOS
 README.MD
 USAR TESTES UNITARIOS
 
-
+pensar em colocar vault 
 PREPARAR O AMBIENTE PARA ENVIAR (application.properties)(sqlserver)
 
 

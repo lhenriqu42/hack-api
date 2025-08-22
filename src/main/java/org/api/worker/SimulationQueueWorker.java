@@ -6,9 +6,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.api.database.postgres.model.Simulacao;
+import org.api.dto.QueueStruct;
 import org.api.event.EventHubProducer;
 import org.api.service.RedisQueueService;
-import org.api.service.RedisQueueService.QueueStruct;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;

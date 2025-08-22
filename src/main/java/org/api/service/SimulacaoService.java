@@ -6,15 +6,21 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
+import org.api.database.postgres.model.Simulacao;
+import org.api.database.postgres.repository.SimulacaoRepository;
 import org.api.database.sqlserver.model.Produto;
 import org.api.database.sqlserver.repository.ProdutoRepository;
 import org.api.dto.ParcelaDTO;
+import org.api.dto.QueueStruct;
+import org.api.dto.ResponseAll;
+import org.api.dto.ResponseDia;
 import org.api.dto.ResultadoDTO;
 import org.api.dto.SimulationRequest;
 import org.api.dto.SimulationResponse;
-import org.api.service.RedisQueueService.QueueStruct;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,6 +38,9 @@ public class SimulacaoService {
 	CacheService cacheService;
 
 	@Inject
+	SimulacaoRepository simulacaoRepository;
+
+	@Inject
 	RedisQueueService redisQueueService;
 
 	private static final MathContext MC = new MathContext(20, RoundingMode.HALF_UP);
@@ -40,6 +49,10 @@ public class SimulacaoService {
 		long timestamp = System.currentTimeMillis();
 		long counter = COUNTER.getAndUpdate(x -> (x + 1) % 1000);
 		return timestamp * 1000 + counter;
+	}
+
+	private String generateCacheKey(SimulationRequest req) {
+		return String.format("valorDesejado:%s-prazo:%d", req.valorDesejado(), req.prazo());
 	}
 
 	private List<ParcelaDTO> calcularSAC(BigDecimal principal, BigDecimal taxaMensal, int meses) {
@@ -74,12 +87,31 @@ public class SimulacaoService {
 		return parcelas;
 	}
 
-	@Transactional
-	public SimulationResponse simular(Produto produto, BigDecimal valorDesejado, int prazo) {
+	public Produto getProduto(SimulationRequest req) {
+		String cacheKey = generateCacheKey(req);
+		var produtoCached = cacheService.get(cacheKey);
+		if (produtoCached.isPresent()) {
+			return (Produto) produtoCached.get();
+		}
+		List<Produto> produtos = produtoRepository.filterProducts(req.valorDesejado(), req.prazo());
+		if (produtos.isEmpty()) {
+			return null;
+		}
+		cacheService.put(cacheKey, produtos.getFirst());
+		return produtos.getFirst();
+	}
 
+	@Transactional
+	public SimulationResponse simular(SimulationRequest req) {
+
+		Produto produto = getProduto(req);
+		if (produto == null) {
+			throw new IllegalArgumentException(
+					"Infelizmente não temos nenhum produto que atenda a sua solicitação no momento 😓");
+		}
 		BigDecimal taxa = produto.taxaJurosMensal;
-		List<ParcelaDTO> sac = calcularSAC(valorDesejado, taxa, prazo);
-		List<ParcelaDTO> price = calcularPRICE(valorDesejado, taxa, prazo);
+		List<ParcelaDTO> sac = calcularSAC(req.valorDesejado(), taxa, req.prazo());
+		List<ParcelaDTO> price = calcularPRICE(req.valorDesejado(), taxa, req.prazo());
 		List<ResultadoDTO> resultados = List.of(new ResultadoDTO("SAC", sac), new ResultadoDTO("PRICE", price));
 
 		BigDecimal totalSac = sac.stream()
@@ -101,8 +133,8 @@ public class SimulacaoService {
 				produto.codigo,
 				produto.nome,
 				produto.taxaJurosMensal,
-				valorDesejado,
-				prazo,
+				req.valorDesejado(),
+				req.prazo(),
 				LocalDate.now(),
 				total);
 		redisQueueService.enqueue(data);
@@ -116,21 +148,48 @@ public class SimulacaoService {
 		return response;
 	}
 
-	private String generateCacheKey(SimulationRequest req) {
-		return String.format("valorDesejado:%s-prazo:%d", req.valorDesejado(), req.prazo());
+	@Transactional
+	public ResponseAll getAllSimulacoes(Integer pagina, Integer qtdRegistrosPagina) {
+		List<Simulacao> simulacoes = simulacaoRepository.findAll().page(pagina - 1, qtdRegistrosPagina).list();
+		List<ResponseAll.Registro> registros = simulacoes.stream()
+				.map(s -> new ResponseAll.Registro(s.id, s.valorDesejado, s.prazo, s.valorTotalParcelas))
+				.collect(Collectors.toList());
+		return new ResponseAll(pagina, simulacaoRepository.count(), registros.size(), registros);
 	}
 
-	public Produto getProduto(SimulationRequest req) {
-		String cacheKey = generateCacheKey(req);
-		var produtoCached = cacheService.get(cacheKey);
-		if (produtoCached.isPresent()) {
-			return (Produto) produtoCached.get();
+	@Transactional
+	public ResponseDia getSimulacoesPorProduto(LocalDate dia) {
+		List<Simulacao> sims = simulacaoRepository.find("dataReferencia", dia).list();
+		Map<Integer, List<Simulacao>> porProduto = sims.stream().collect(Collectors.groupingBy(s -> s.codigoProduto));
+
+		List<ResponseDia.SimuProduct> simulacoes = new ArrayList<>();
+		for (var entry : porProduto.entrySet()) {
+			Integer codigoProduto = entry.getKey();
+			List<Simulacao> lista = entry.getValue();
+			BigDecimal taxaMediaJuro = lista.stream()
+					.map(s -> s.taxaJuros)
+					.reduce(BigDecimal.ZERO, BigDecimal::add)
+					.divide(BigDecimal.valueOf(lista.size()), MC);
+			BigDecimal valorMedioPrestacao = lista.stream()
+					.map(s -> s.valorTotalParcelas)
+					.reduce(BigDecimal.ZERO, BigDecimal::add)
+					.divide(BigDecimal.valueOf(lista.size()), MC);
+			BigDecimal valorTotalDesejado = lista.stream()
+					.map(s -> s.valorDesejado)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+			BigDecimal valorTotalCredito = lista.stream()
+					.map(s -> s.valorTotalParcelas)
+					.reduce(BigDecimal.ZERO, BigDecimal::add);
+
+			simulacoes.add(new ResponseDia.SimuProduct(
+					codigoProduto,
+					lista.get(0).nomeProduto,
+					taxaMediaJuro,
+					valorMedioPrestacao,
+					valorTotalDesejado,
+					valorTotalCredito));
 		}
-		List<Produto> produtos = produtoRepository.filterProducts(req.valorDesejado(), req.prazo());
-		if (produtos.isEmpty()) {
-			return null;
-		}
-		cacheService.put(cacheKey, produtos.getFirst());
-		return produtos.getFirst();
+		return new ResponseDia(dia, simulacoes);
 	}
+
 }

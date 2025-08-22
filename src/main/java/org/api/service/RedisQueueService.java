@@ -1,8 +1,8 @@
 package org.api.service;
 
-import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.LocalDate;
+
+import org.api.dto.QueueStruct;
 
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.list.ListCommands;
@@ -11,39 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class RedisQueueService {
 
-	public record QueueStruct(
-			long simulacaoId,
-			Integer codigoProduto,
-			String nomeProduto,
-			BigDecimal taxaJurosMensal,
-			BigDecimal valorDesejado,
-			Integer prazo,
-			LocalDate dataReferencia,
-			BigDecimal valorTotalParcelas) {
-
-		public String toJsonString() {
-			return """
-					{
-					    "simulacaoId": %d,
-					    "codigoProduto": %d,
-					    "nomeProduto": "%s",
-					    "taxaJurosMensal": %s,
-					    "valorDesejado": %s,
-					    "prazo": %d,
-					    "dataReferencia": "%s",
-					    "valorTotalParcelas": %s
-					}
-					""".formatted(
-					simulacaoId(),
-					codigoProduto(),
-					nomeProduto(),
-					taxaJurosMensal(),
-					valorDesejado(),
-					prazo(),
-					dataReferencia(),
-					valorTotalParcelas());
-		}
-	}
+	
 
 	private static final String QUEUE_NAME = "simulationQueue";
 

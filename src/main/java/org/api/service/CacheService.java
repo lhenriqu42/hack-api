@@ -9,8 +9,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class CacheService {
 
-    // TTL padrão (5 segundos)
-    private static final long TTL_MILLIS = 5_000L;
+    // TTL padrão (10 segundos)
+    private static final long TTL_MILLIS = 10_000L;
 
     private static class CacheEntry {
         final Object value;
