@@ -1,18 +1,21 @@
 package org.api.service;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.api.dto.QueueStruct;
 
 import io.quarkus.redis.datasource.RedisDataSource;
+import io.quarkus.redis.datasource.list.KeyValue;
 import io.quarkus.redis.datasource.list.ListCommands;
+import io.quarkus.redis.datasource.list.Position;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class RedisQueueService {
 
-	
-
+	private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
 	private static final String QUEUE_NAME = "simulationQueue";
 
 	private final ListCommands<String, QueueStruct> commands;
@@ -49,6 +52,27 @@ public class RedisQueueService {
 			return item.value();
 		} catch (Exception e) {
 			return null; // Em caso de erro, retorna null
+		}
+	}
+
+	/**
+	 * Remove e retorna um lote de itens da fila (FIFO).
+	 */
+	public List<QueueStruct> dequeueBatch(int batchSize) {
+		try {
+
+			List<KeyValue<String, QueueStruct>> items = commands.blmpop(DEFAULT_TIMEOUT, Position.LEFT, batchSize,
+					QUEUE_NAME);
+			if (items == null || items.isEmpty()) {
+				return List.of(); // fila vazia
+			}
+			List<QueueStruct> result = new ArrayList<>();
+			for (KeyValue<String, QueueStruct> kv : items) {
+				result.add(kv.value());
+			}
+			return result;
+		} catch (Exception e) {
+			return List.of(); // Em caso de erro, retorna lista vazia
 		}
 	}
 
