@@ -20,3 +20,5 @@ incoerencia em telemetria (possibilitar filtrar por POST/GET atravez de query pa
 BOMBARDEAR A API DE REQUESTS
 
 tentar usar o -pg com java
+
+fazer os workers processarem mais de 1 item por vez

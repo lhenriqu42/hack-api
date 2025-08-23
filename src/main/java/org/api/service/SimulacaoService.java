@@ -181,7 +181,7 @@ public class SimulacaoService {
 			simulacoes.add(new ResponseDia.SimuProduct(
 					codigoProduto,
 					lista.get(0).nomeProduto,
-					taxaMediaJuro,
+					taxaMediaJuro.stripTrailingZeros(),
 					valorMedioPrestacao,
 					valorTotalDesejado,
 					valorTotalCredito));

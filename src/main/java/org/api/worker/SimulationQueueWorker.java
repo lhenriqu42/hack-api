@@ -25,7 +25,7 @@ public class SimulationQueueWorker {
 
 	private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(5);
 
-	@ConfigProperty(name = "num.workers.process", defaultValue = "5")
+	@ConfigProperty(name = "num.workers.process", defaultValue = "2")
 	int workers;
 
 	@Inject
@@ -56,7 +56,7 @@ public class SimulationQueueWorker {
 					continue;
 				}
 				insertInPostgres(item);
-				sendEvent(item);
+				// sendEvent(item);
 			} catch (Exception e) {
 				Log.error("Falha processando item da fila", e);
 			}
