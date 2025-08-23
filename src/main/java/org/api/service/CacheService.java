@@ -1,62 +1,44 @@
+
 package org.api.service;
 
-import java.util.Map;
+
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class CacheService {
 
-    // TTL padrão (10 segundos)
-    private static final long TTL_MILLIS = 10_000L;
+    private static final long DEFAULT_TTL_SECONDS = 10L;
 
-    private static class CacheEntry {
-        final Object value;
-        final long expiresAt;
+    private final Cache<String, Object> defaultCache = Caffeine.newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(DEFAULT_TTL_SECONDS, TimeUnit.SECONDS)
+            .build();
 
-        CacheEntry(Object value, long expiresAt) {
-            this.value = value;
-            this.expiresAt = expiresAt;
-        }
-    }
-
-    // ConcurrentHashMap para ser thread-safe
-    private final Map<String, CacheEntry> cacheMap = new ConcurrentHashMap<>();
-
-
-    // Adiciona/atualiza um valor no cache com TTL padrão
+    // Adiciona/atualiza um valor no cache
     public void put(String key, Object value) {
-        put(key, value, TTL_MILLIS);
-    }
-
-    // Adiciona/atualiza um valor no cache com TTL customizável (ms)
-    public void put(String key, Object value, long ttlMillis) {
-        long expiresAt = System.currentTimeMillis() + TTL_MILLIS;
-        cacheMap.put(key, new CacheEntry(value, expiresAt));
+        defaultCache.put(key, value);
     }
 
     // Recupera um valor do cache (retorna vazio se expirado)
     public Optional<Object> get(String key) {
-        CacheEntry entry = cacheMap.get(key);
-        if (entry == null) {
-            return Optional.empty();
+        Object value = defaultCache.getIfPresent(key);
+        if (value != null) {
+            return Optional.of(value);
         }
-        if (System.currentTimeMillis() >= entry.expiresAt) {
-            cacheMap.remove(key);
-            return Optional.empty();
-        }
-        return Optional.ofNullable(entry.value);
+		return Optional.empty();
     }
 
-    // Remove um valor do cache
     public void remove(String key) {
-        cacheMap.remove(key);
+        defaultCache.invalidate(key);
     }
 
-    // Limpa todo o cache
     public void clear() {
-        cacheMap.clear();
+        defaultCache.invalidateAll();
     }
 }

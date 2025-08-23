@@ -41,11 +41,15 @@ public class RedisQueueService {
 	 * o tempo limite seja atingido.
 	 */
 	public QueueStruct dequeue(Duration timeout) {
-		var item = commands.blpop(timeout, QUEUE_NAME);
-		if (item == null) {
-			return null; // timeout atingido, fila vazia
+		try {
+			var item = commands.blpop(timeout, QUEUE_NAME);
+			if (item == null) {
+				return null; // timeout atingido, fila vazia
+			}
+			return item.value();
+		} catch (Exception e) {
+			return null; // Em caso de erro, retorna null
 		}
-		return item.value();
 	}
 
 	/**

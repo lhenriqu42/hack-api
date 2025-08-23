@@ -6,9 +6,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.api.database.postgres.model.Simulacao;
+import org.api.database.postgres.repository.SimulacaoRepository;
 import org.api.dto.QueueStruct;
 import org.api.event.EventHubProducer;
 import org.api.service.RedisQueueService;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;
@@ -23,17 +25,23 @@ public class SimulationQueueWorker {
 
 	private static final Duration WAIT_TIMEOUT = Duration.ofSeconds(5);
 
+	@ConfigProperty(name = "num.workers.process", defaultValue = "5")
+	int workers;
+
 	@Inject
 	RedisQueueService redisService;
 
 	@Inject
 	EventHubProducer eventHubProducer;
 
+	@Inject
+	SimulacaoRepository simulacaoRepository;
+
 	private ExecutorService executor;
 	private final AtomicBoolean running = new AtomicBoolean(false);
 
 	public void onStart(@Observes StartupEvent ev) {
-		int threads = 1; // manter 1 enquanto simples; aumentar depois se necessário
+		int threads = workers;
 		executor = Executors.newFixedThreadPool(threads);
 		running.set(true);
 		executor.submit(this::loop);
@@ -47,12 +55,8 @@ public class SimulationQueueWorker {
 				if (item == null) {
 					continue;
 				}
-				long ini = System.nanoTime();
 				insertInPostgres(item);
 				sendEvent(item);
-				Log.debugf("Item simulacaoId=%d processado em %d ms",
-						item.simulacaoId(),
-						(System.nanoTime() - ini) / 1_000_000);
 			} catch (Exception e) {
 				Log.error("Falha processando item da fila", e);
 			}
@@ -73,7 +77,7 @@ public class SimulationQueueWorker {
 
 	@Transactional
 	void insertInPostgres(QueueStruct item) {
-		new Simulacao(item).persist();
+		simulacaoRepository.persist(new Simulacao(item));
 	}
 
 	public void onStop(@Observes ShutdownEvent ev) {
