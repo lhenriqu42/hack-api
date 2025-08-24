@@ -5,20 +5,9 @@ DOCUMENTAR TUDO E TODOS
 adicionar um swagger (pesquisar alternativas para quarkus)
 README.MD
 
-pensar em colocar vault
-
 USAR TESTES UNITARIOS
 
 ESTRUTURAR O PROJETO POR MODULOS
 
-tratar que os dados nao esta permanecendo nos bancos ao reiniciar os containers
-
 incoerencia em total das parcelas (FAZER UM ENDPOINT Corrigido separado)
 incoerencia em telemetria (possibilitar filtrar por POST/GET atravez de query params)
-
-
-BOMBARDEAR A API DE REQUESTS
-
-tentar usar o -pg com java
-
-fazer os workers processarem mais de 1 item por vez
