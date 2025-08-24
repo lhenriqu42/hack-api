@@ -65,36 +65,35 @@ services:
       retries: 10
     restart: always
 
-  hack-api:
-    image: lhenriqu/hack-api:1.0
-    container_name: hack-api
-    depends_on:
-      sqlserver:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
+  # hack-api:
+  #   image: lhenriqu/hack-api:1.0
+  #   container_name: hack-api
+  #   depends_on:
+  #     sqlserver:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     postgres:
+  #       condition: service_healthy
 
-    ports:
-      - "8080:8080"
-    environment:
-      POSTGRES_URL: jdbc:postgresql://postgres:5432/hackdb
-      POSTGRES_USERNAME: postgres
-      POSTGRES_PASSWORD: SenhaForte123!@
-      POSTGRES_DB_GENERATION: create-drop
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     POSTGRES_URL: jdbc:postgresql://postgres:5432/hackdb
+  #     POSTGRES_USERNAME: postgres
+  #     POSTGRES_PASSWORD: SenhaForte123!@
+  #     POSTGRES_DB_GENERATION: create-drop
 
-      SQLSERVER_URL: jdbc:sqlserver://sqlserver:1433;databaseName=master;encrypt=false;trustServerCertificate=true
-      SQLSERVER_USERNAME: sa
-      SQLSERVER_PASSWORD: SenhaForte123!@
+  #     SQLSERVER_URL: jdbc:sqlserver://sqlserver:1433;databaseName=master;encrypt=false;trustServerCertificate=true
+  #     SQLSERVER_USERNAME: sa
+  #     SQLSERVER_PASSWORD: SenhaForte123!@
       
-      REDIS_HOSTS: redis://redis:6379
+  #     REDIS_HOSTS: redis://redis:6379
       
-      EVENTHUB_KEY: 
-
-    networks:
-      - backend
-    restart: always
+  #     EVENTHUB_KEY: 
+  #   networks:
+  #     - backend
+  #   restart: always
 
 networks:
   backend:

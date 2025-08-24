@@ -10,5 +10,7 @@ public record MetricsSnapshot(
 		long tempoMedio,
 		long tempoMinimo,
 		long tempoMaximo,
-		double percentualSucesso) {
+		double percentualSucesso,
+		Long p99,
+		Long p95) {
 }

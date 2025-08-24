@@ -11,3 +11,5 @@ ESTRUTURAR O PROJETO POR MODULOS
 
 incoerencia em total das parcelas (FAZER UM ENDPOINT Corrigido separado)
 incoerencia em telemetria (possibilitar filtrar por POST/GET atravez de query params)
+
+testar se a alteracao nos evendos nao deu ruim

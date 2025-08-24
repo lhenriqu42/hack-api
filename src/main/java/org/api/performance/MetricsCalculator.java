@@ -26,8 +26,11 @@ public class MetricsCalculator {
 	private final AtomicLong tempoMinimoMillis = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong tempoMaximoMillis = new AtomicLong(Long.MIN_VALUE);
 
+	private final PercentilHistogram percentilHistogram;
+
 	public MetricsCalculator(String nomeApi) {
 		this.nomeApi = nomeApi;
+		this.percentilHistogram = new PercentilHistogram();
 	}
 
 	/**
@@ -61,6 +64,7 @@ public class MetricsCalculator {
 		if (sucesso) {
 			sucessos.increment();
 		}
+		percentilHistogram.registrar(duracaoMillis);
 	}
 
 	private void atualizarMin(long valor) {
@@ -95,7 +99,9 @@ public class MetricsCalculator {
 					0L,
 					0L,
 					0L,
-					0.0);
+					0.0,
+					0L,
+					0L);
 		}
 
 		if (min == Long.MAX_VALUE)
@@ -113,6 +119,9 @@ public class MetricsCalculator {
 				media,
 				min,
 				max,
-				percentualSucesso);
+				percentualSucesso,
+				percentilHistogram.p99(),
+				percentilHistogram.p95()
+		);
 	}
 }

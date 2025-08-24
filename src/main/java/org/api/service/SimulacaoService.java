@@ -181,7 +181,7 @@ public class SimulacaoService {
 			simulacoes.add(new ResponseDia.SimuProduct(
 					codigoProduto,
 					lista.get(0).nomeProduto,
-					taxaMediaJuro.setScale(2, RoundingMode.HALF_UP),
+					taxaMediaJuro.stripTrailingZeros(),
 					valorMedioPrestacao.setScale(2, RoundingMode.HALF_UP),
 					valorTotalDesejado.setScale(2, RoundingMode.HALF_UP),
 					valorTotalCredito.setScale(2, RoundingMode.HALF_UP)));
