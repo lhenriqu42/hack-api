@@ -17,6 +17,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -24,10 +25,8 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class SimulationQueueWorker {
 
-	private static final int BATCH_SIZE = 100;
-
-	@ConfigProperty(name = "num.workers.process", defaultValue = "2")
-	int workers;
+	@ConfigProperty(name = "queue.batch.size", defaultValue = "100")
+	int batchSize;
 
 	@Inject
 	RedisQueueService redisService;
@@ -42,17 +41,15 @@ public class SimulationQueueWorker {
 	private final AtomicBoolean running = new AtomicBoolean(false);
 
 	public void onStart(@Observes StartupEvent ev) {
-		executor = Executors.newFixedThreadPool(workers);
+		executor = Executors.newFixedThreadPool(1); // Somente 1 thread para processar a fila nesse caso é o suficiente
 		running.set(true);
-		for (int i = 0; i < workers; i++) {
-			executor.submit(this::loop);
-		}
+		executor.submit(this::loop);
 	}
 
 	private void loop() {
 		while (running.get()) {
 			try {
-				List<QueueStruct> itens = redisService.dequeueBatch(BATCH_SIZE);
+				List<QueueStruct> itens = redisService.dequeueBatch(batchSize);
 				insertInPostgres(itens);
 				// sendEvent(itens);
 			} catch (Exception e) {
@@ -61,40 +58,26 @@ public class SimulationQueueWorker {
 		}
 	}
 
-	@Transactional
 	void sendEvent(List<QueueStruct> itens) {
 		if (itens.isEmpty())
 			return;
-		eventHubProducer.sendItens(itens, BATCH_SIZE);
+		eventHubProducer.sendItens(itens);
 	}
 
+	@ActivateRequestContext
+	@Transactional
 	void insertInPostgres(List<QueueStruct> itens) {
 		if (itens == null || itens.isEmpty())
 			return;
 
-		int batchSize = 50; // Ajuste conforme DB/memória
 		List<Simulacao> batch = new ArrayList<>(batchSize);
 
-		var em = simulacaoRepository.getEntityManager();
-
-		int count = 0;
 		for (QueueStruct item : itens) {
 			batch.add(new Simulacao(item));
-			count++;
-
-			if (count % batchSize == 0) {
-				// Persistir batch
-				batch.forEach(em::persist);
-				em.flush();
-				em.clear();
-				batch.clear();
-			}
 		}
 
-		// Persistir o que sobrou
-		batch.forEach(em::persist);
-		em.flush();
-		em.clear();
+		simulacaoRepository.persist(batch);
+		simulacaoRepository.flush();
 	}
 
 	public void onStop(@Observes ShutdownEvent ev) {

@@ -24,6 +24,9 @@ public class EventHubProducer {
 	@ConfigProperty(name = "eventhub.connection-string", defaultValue = "")
 	String connectionString;
 
+	@ConfigProperty(name = "queue.batch.size", defaultValue = "100")
+	int batchSize;
+
 	@Inject
 	ObjectMapper mapper;
 
@@ -40,7 +43,7 @@ public class EventHubProducer {
 	/**
 	 * Envia um payload JSON para o Event Hub.
 	 */
-	public void sendItens(List<QueueStruct> itens, int batchSize) {
+	public void sendItens(List<QueueStruct> itens) {
 
 		List<EventData> batch = new ArrayList<>(batchSize);
 
