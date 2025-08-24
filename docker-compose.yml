@@ -7,6 +7,11 @@ services:
     networks:
       - backend
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -21,6 +26,13 @@ services:
     volumes:
       - ./src/main/resources/products.sql:/docker-entrypoint-initdb.d/products.sql
       - sqlserver_data:/var/opt/mssql
+    
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    
     restart: always
 
   # sqlserver-init:
@@ -46,15 +58,24 @@ services:
       - backend
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "exit 0" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
     restart: always
 
   hack-api:
     image: lhenriqu/hack-api:1.0
     container_name: hack-api
     depends_on:
-      - postgres
-      - sqlserver
-      - redis
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
     ports:
       - "8080:8080"
     environment:
@@ -69,8 +90,8 @@ services:
       
       REDIS_HOSTS: redis://redis:6379
       
-      EVENTHUB_KEY: Endpoint=
-    
+      EVENTHUB_KEY: 
+
     networks:
       - backend
     restart: always

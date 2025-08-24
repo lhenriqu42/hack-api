@@ -20,8 +20,6 @@ public class MetricsCalculator {
 
 	private final String nomeApi;
 
-	private Long startRequestTime;
-
 	private final LongAdder totalRequisicoes = new LongAdder();
 	private final LongAdder sucessos = new LongAdder();
 	private final LongAdder tempoTotalMillis = new LongAdder();
@@ -35,8 +33,8 @@ public class MetricsCalculator {
 	/**
 	 * Marca o início de uma medição (usa nanoTime para precisão).
 	 */
-	public void startTimer() {
-		this.startRequestTime = System.nanoTime();
+	public long  startTimer() {
+		return System.nanoTime();
 	}
 
 	/**
@@ -44,8 +42,8 @@ public class MetricsCalculator {
 	 * 
 	 * @param sucesso true se a requisição foi considerada sucesso (ex: status 200)
 	 */
-	public void stopTimer(boolean sucesso) {
-		long durNanos = System.nanoTime() - this.startRequestTime;
+	public void stopTimer(long startTime, boolean sucesso) {
+		long durNanos = System.nanoTime() - startTime;
 		long durMillis = TimeUnit.NANOSECONDS.toMillis(durNanos);
 		record(durMillis, sucesso);
 	}

@@ -24,7 +24,7 @@ public class MetricsInterceptor {
 	public Object track(InvocationContext ctx) throws Exception {
 		String path = uriInfo.getPath();
 		var metric = metricsManager.getMetric(path);
-		metric.startTimer();
+		Long inicio = metric.startTimer();
 
 		try {
 			Object result = ctx.proceed();
@@ -33,10 +33,10 @@ public class MetricsInterceptor {
 				int status = response.getStatus();
 				success = status >= 200 && status < 400;
 			}
-			metric.stopTimer(success);
+			metric.stopTimer(inicio, success);
 			return result;
 		} catch (Exception e) {
-			metric.stopTimer(false);
+			metric.stopTimer(inicio, false);
 			throw e;
 		}
 	}
